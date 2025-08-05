@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documento Casos de Uso</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 50%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+            overflow: hidden;
+            resize: none; /* Evita que el usuario cambie el tamaño manualmente */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script>
+        var ultimaFilaInsertada = 9;
+        function agregarFila() {
+            var table = document.getElementById("tabla");
+            ultimaFilaInsertada++;
+            var row = table.insertRow(ultimaFilaInsertada); 
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            cell1.innerHTML = '<textarea name="nuevoCampo1" oninput="autoResize(this)"></textarea>';
+            cell2.innerHTML = '<textarea name="nuevoCampo2" oninput="autoResize(this)"></textarea>';
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+
+        function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const table = document.getElementById("tabla");
+            const textareas = table.querySelectorAll("textarea");
+            const checkboxes = table.querySelectorAll("input[type='checkbox']");
+
+            // Verificar si todos los campos de texto están llenos
+            for (let i = 0; i < textareas.length; i++) {
+                if (textareas[i].value.trim() === "") {
+                    // Mostrar alerta si hay algún campo vacío
+                    alert("Todos los campos deben estar llenos antes de exportar a PDF.");
+                    return;
+                }
+            }
+
+            // Verificar si al menos un checkbox está marcado
+            let checkboxMarcado = false;
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    checkboxMarcado = true;
+                    break;
+                }
+            }
+            if (!checkboxMarcado) {
+                // Mostrar alerta si ningún checkbox está marcado
+                alert("Debe marcar al menos una opción antes de exportar a PDF.");
+                return;
+            }
+            
+            // Capturar la tabla como imagen y divide en páginas
+            html2canvas(table).then(canvas => {
+                const imgData = canvas.toDataURL("image/png");
+                const imgWidth = 210; 
+                const pageHeight = 297; 
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = canvas.height; 
+                let position = 0;
+
+                while (heightLeft > 0) {
+                    // Recorta la sección visible del canvas para esta página
+                    const pageCanvas = document.createElement("canvas");
+                    pageCanvas.width = canvas.width;
+                    pageCanvas.height = pageHeight * (canvas.width / imgWidth); 
+                    const ctx = pageCanvas.getContext("2d");
+
+                    // Dibujar la porción correspondiente del contenido original en un nuevo canvas
+                    ctx.drawImage(canvas, 0, position * (canvas.width / imgWidth), canvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+
+                    const pageData = pageCanvas.toDataURL("image/png");
+                    pdf.addImage(pageData, "PNG", 0, 0, imgWidth, pageHeight);
+
+                    heightLeft -= pageCanvas.height * (imgWidth / canvas.width);
+                    position += pageCanvas.height * (imgWidth / canvas.width);
+                    // Agregar nueva página si queda contenido
+                    if (heightLeft > 0) {
+                        pdf.addPage();
+                    }
+                }
+
+                pdf.save("casos_de_uso.pdf");
+            });
+        }
+    </script>
+</head>
+<body>
+    <button onclick="agregarFila()">Agregar Paso</button>
+    <button onclick="exportarPDF()">Exportar a PDF</button>
+    <div id="error-message" class="error-message"></div>
+    <table id="tabla">
+        
+        <tr>
+            <td>Nombre del caso de uso: <textarea name="campo1" oninput="autoResize(this)"></textarea></td>
+            <td>ID único: <textarea name="campo2" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Área: <textarea name="campo3" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Actor(es) <textarea name="campo4" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Interesado: <textarea name="campo5" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Nivel: <textarea name="campo6" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Descripción: <textarea name="campo7" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Evento desencadenado: <textarea name="campo8" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Tipo desencadenado:   Externo: <input type="checkbox" name="opcion1" value="opcion1">
+                Temporal: <input type="checkbox" name="opcion2" value="opcion2">
+            </td>
+        </tr>
+        <tr>
+            <td>Pasos realizados(ruta principal) </td>
+            <td>Información para los pasos </td>
+        </tr>
+        <tr>
+            <td> <textarea name="campo1" oninput="autoResize(this)"></textarea></td>
+            <td> <textarea name="campo2" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Precondiciones: <textarea name="campo9" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Postcondiciones: <textarea name="campo10" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Suposiciones: <textarea name="campo11" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Garantía de éxito: <textarea name="campo12" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Garantía mínima: <textarea name="campo13" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Requerimientos cumplidos: <textarea name="campo14" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Cuestiones pendientes: <textarea name="campo15" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Prioridad: <textarea name="campo16" oninput="autoResize(this)"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2">Riesgo: <textarea name="campo17" oninput="autoResize(this)"></textarea></td>
+        </tr>
+    </table>
+</body>
+</html>
